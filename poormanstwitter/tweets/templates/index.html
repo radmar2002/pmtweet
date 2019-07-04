@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Poor Man's Twitter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Build a Poor Man Twitter application in a single web page.">
+
+    <meta name="keywords" content="vuejs django rest api">
+    <!-- bootstap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <!-- boostrap css -->
+
+  </head>
+
+  <body>
+    <div id="starting">
+      <div class="container">
+          <br/>
+          <br/>
+                <form v-on:submit.prevent="addTweet()">
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                      <label for="name">Name</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="name"
+                        placeholder="Enter your name"
+                        v-model="newTweet.name"
+                        required="required" >
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label for="message">Tweet Message</label>
+                      <input
+                        class="form-control"
+                        id="message"
+                        placeholder="Enter your tweet"
+                        v-model="newTweet.message"
+                        required="required"
+                        >
+                    </div>
+                </div>
+                <div>
+                  <button type="submit" class="btn btn-primary">Tweet</button>
+                </div>
+                </form>
+          <br/>
+        <div class="row">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">Time of the Tweet</th>
+                <th scope="col">Tweet</th>
+                <th scope="col">Name</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="tweet in tweets">
+                <th scope="row">${tweet.date_posted}</th>
+                <td>${tweet.message}</td>
+                <td>${tweet.name}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+        <div class="loading" v-if="loading===true">Loading...</div>
+    </div>
+
+  <!-- bootrtap js files -->
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+  <!-- vue.js files -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.5.13/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.3.5"></script>
+  <script type="text/javascript">
+    Vue.http.headers.common['X-CSRFToken'] = "{{ csrf_token }}";
+    new Vue({
+      el: '#starting',
+      delimiters: ['${','}'],
+      data: {
+        tweets: [],
+        loading: true,
+        currentTweet: {},
+        message: null,
+        newTweet: { 'name': null, 'message': null },
+        search_term: '',
+      },
+      mounted: function() {
+        this.getTweets();
+      },
+      methods: {
+        getTweets: function() {
+          let api_url = '/api/tweet/';
+          if(this.search_term!==''||this.search_term!==null) {
+            api_url = `/api/tweet/?search=${this.search_term}`
+          }
+          this.loading = true;
+          this.$http.get(api_url)
+              .then((response) => {
+                this.tweets = response.data;
+                this.loading = false;
+              })
+              .catch((err) => {
+                this.loading = false;
+                console.log(err);
+              })
+        },
+        addTweet: function() {
+          this.loading = true;
+          this.$http.post('/api/tweet/',this.newTweet)
+              .then((response) => {
+                this.loading = true;
+                this.getTweets();
+              })
+              .catch((err) => {
+                this.loading = true;
+                console.log(err);
+              })
+        }
+      }
+    });
+  </script>
+  </body>
+</html>
